@@ -7,6 +7,23 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 
+class Text(models.Model):
+    """ store all text(example: usage) for whole site"""
+    name = models.CharField(max_length=10, unique=True)
+    title = models.CharField(max_length=20, unique=True)
+    content = models.TextField()
+
+
+class TagList(models.Model):
+    """ store all tag for function and skill"""
+    CLASSES_LIST = [
+        ('LB', 'library'),
+        ('TP', 'topic')
+    ]
+    classes = models.CharField(choices=CLASSES_LIST)
+    tag = models.CharField(max_length=20)
+
+
 class RequestLog(models.Model):
     """ base class for all issue and modify request log """
     REQUEST_TYPE_LIST = [
@@ -25,16 +42,6 @@ class RequestLog(models.Model):
 
     class Meta:
         abstract = True
-
-
-class TagList(models.Model):
-    """ store all tag for function and skill"""
-    CLASSES_LIST = [
-        ('LB', 'library'),
-        ('TP', 'topic')
-    ]
-    classes = models.CharField(choices=CLASSES_LIST)
-    tag = models.CharField(max_length=20)
 
 
 class Library(models.Model):
