@@ -27,7 +27,7 @@ class TagList(models.Model):
 class RequestLog(models.Model):
     """ base class for all issue and modify request log """
     REQUEST_TYPE_LIST = [
-        ('add', 'Add'),
+        ('request', 'Request'),
         ('issue', 'Issue')
     ]
     request_type = models.CharField(choices=REQUEST_TYPE_LIST)
@@ -38,7 +38,7 @@ class RequestLog(models.Model):
         UserProfile, blank=True, null=True, on_delete=models.SET_NULL)
     approver = models.ForeignKey(
         UserProfile, blank=True, null=True, on_delete=models.SET_NULL)
-    timestamp = models.DateTimeField('update time')
+    timestamp = models.DateTimeField('update time', auto_now_add=True)
 
     class Meta:
         abstract = True
@@ -49,7 +49,12 @@ class Library(models.Model):
     name = models.CharField(max_length=20, unique=True)
     description = models.TextField(max_length=400)
     creator = models.ForeignKey(UserProfile)
-    timestamp = models.DateTimeField('update time')
+    timestamp = models.DateTimeField('update time', auto_now=True)
+    visible = models.BooleanField(default=True)
+
+    def hide(self):
+        self.visible = False
+        self.save()
 
 
 class LibraryRequest(RequestLog):
@@ -65,7 +70,7 @@ class Function(models.Model):
     library = models.ForeignKey(Library, on_delete=models.CASCADE)
     tag = models.ForeignKey(TagList, blank=True, null=True)
     creator = models.ForeignKey(UserProfile)
-    timestamp = models.DateTimeField('update time')
+    timestamp = models.DateTimeField('update time', auto_now=True)
 
 
 class FunctionRequest(RequestLog):
@@ -78,7 +83,7 @@ class Topic(models.Model):
     title = models.CharField(unique=True, max_length=40)
     description = models.TextField(max_length=400)
     creator = models.ForeignKey(UserProfile)
-    timestamp = models.DateTimeField('update time')
+    timestamp = models.DateTimeField('update time', auto_now=True)
 
 
 class TopicRequest(RequestLog):
@@ -94,7 +99,7 @@ class Skill(models.Model):
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     tag = models.ForeignKey(TagList, blank=True, null=True)
     creator = models.ForeignKey(UserProfile)
-    timestamp = models.DateTimeField('update time')
+    timestamp = models.DateTimeField('update time', auto_now=True)
 
 
 class SkillRequest(RequestLog):

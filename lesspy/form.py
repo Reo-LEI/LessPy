@@ -7,17 +7,17 @@ class UserProfileForm(forms.Form):
     pass
 
 
+class TagListForm(forms):
+    classes = forms.ChoiceField(choices=TagList.CLASSES_LIST)
+    tag = forms.CharField(max_length=20)
+
+
 class LibraryForm(forms.Form):
     name = forms.CharField(max_length=20, lable='Library name',
                            help_text='build in function or module')
     description = forms.CharField(max_length=400,
                                   help_text='400 characters max',
                                   widget=forms.Textarea)
-
-
-class TagListForm(forms):
-    classes = forms.ChoiceField(choices=TagList.CLASSES_LIST)
-    tag = forms.CharField(max_length=20)
 
 
 class LibraryRequestForm(forms.Form):
@@ -41,6 +41,12 @@ class FunctionForm(forms.Form):
                                   widget=forms.Textarea)
     instance = forms.CharField(lable='example',
                                help_text='the example for this function')
+    tag = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super(FunctionForm, self).__init__(*args, **kwargs)
+        self.tag.choices = [
+            (tag.id, tag.tag) for tag in TagList.objects.filter(classes='LB')]
 
 
 class FunctionRequestForm(forms.Form):
@@ -49,7 +55,6 @@ class FunctionRequestForm(forms.Form):
     subject = forms.CharField(max_length=20)
     solution = forms.CharField(widget=forms.Textarea)
     note = forms.CharField()
-    tag = forms.ChoiceField()
 
     def __init__(self, *args, **kwargs):
         super(FunctionRequestForm, self).__init__(*args, **kwargs)
@@ -58,8 +63,6 @@ class FunctionRequestForm(forms.Form):
         self.function.choices = [
             (func.id, func.name) for func in
             Function.objects.filter(library=self.library)]
-        self.tag.choices = [
-            (tag.id, tag.tag) for tag in TagList.objects.filter(classes='LB')]
 
 
 class TopicForm(forms.Form):
@@ -89,6 +92,12 @@ class SkillForm(forms.Form):
                                  help_text='What problem you want to solve by '
                                            'this skill')
     solution = forms.CharField(widget=forms.Textarea)
+    tag = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super(SkillForm, self).__init__(*args, **kwargs)
+        self.tag.choices = [
+            (tag.id, tag.tag) for tag in TagList.objects.filter(classes='TP')]
 
 
 class SkillRequestForm(forms.Form):
@@ -106,5 +115,3 @@ class SkillRequestForm(forms.Form):
         self.skill.choices = [
             (skill.id, skill.name) for skill in
             Skill.objects.filter(topic=self.topic)]
-        self.tag.choices = [
-            (tag.id, tag.tag) for tag in TagList.objects.filter(classes='TP')]

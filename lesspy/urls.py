@@ -6,28 +6,23 @@ from . import views
 app_name = 'lesspy'
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    url(r'^(?P<url>pythonlib)/$', include([
-        url(r'^$', views.display, name='lib'),
-        url(r'^add/(?:(?P<id>\d*)/)?$', views.add, name='lib_add'),
-        url(r'^edit/(?:(?P<id>\d*)/)?$', views.edit, name='lib_edit'),
-        url(r'^issue/(?:(?P<id>\d*)/)?$', views.issue, name='lib_issue')
+    url(r'^pythonlib/$', include([
+        url(r'^$', views.lib_list, name='lib_list'),
+        url(r'^add/$', views.lib_add, name='lib_add'),
+        url(r'^(?P<lib_name>\w*)/del/$', views.lib_del, name='lib_del'),
+        url(r'^(?P<lib_name>\w*)/edit/$', views.lib_edit, name='lib_edit'),
+        url(r'^(?P<lib_name>\w*)/request/$', views.lib_request, name='lib_request'),
+        url(r'^(?P<lib_name>\w*)/$', include([
+            url(r'^$', views.func_list, name='func_list'),
+            url(r'^add/$', views.func_add, name='func_add'),
+            url(r'^(?P<func_name>\w*)/$', views.func, name='func'),
+            url(r'^(?P<func_name>\w*)/del/$', views.func_del, name='func_del'),
+            url(r'^(?P<func_name>\w*)/edit/$', views.func_edit, name='func_edit'),
+            url(r'^(?P<func_name>\w*)/request/$', views.func_request, name='func_request')
+        ])),
     ])),
-    url(r'pythonlib/(?P<url>function)/', include([
-        url(r'^$', views.display, name='func'),
-        url(r'^add/(?:(?P<id>\d*)/)?$', views.add, name='func_add'),
-        url(r'^edit/(?:(?P<id>\d*)/)?$', views.edit, name='func_edit'),
-        url(r'^issue/(?:(?P<id>\d*)/)?$', views.issue, name='func_issue')
+    url(r'^lesscode/$', include([
+
     ])),
-    url(r'^(?P<url>lesscode)/$', include([
-        url(r'^s', views.display, name='lesscode'),
-        url(r'^add/(?:(?P<id>\d*)/)?$', views.add, name='lesscode_add'),
-        url(r'^edit/(?:(?P<id>\d*)/)?$', views.edit, name='lesscode_edit'),
-        url(r'^issue/(?:(?P<id>\d*)/)?$', views.issue, name='lesscode_issue')
-    ])),
-    url(r'^lesscode/(?P<url>skill)/$'), include([
-        url(r'^$', views.display, name='skill'),
-        url(r'^add/(?:(?P<id>\d*)/)?$', views.add, name='skill_add'),
-        url(r'^edit/(?:(?P<id>\d*)/)?$', views.edit, name='skill_edit'),
-        url(r'^issue/(?:(?P<id>\d*)/)?$', views.issue, name='skill_issue')
-    ])
+    url(r'^', include('django.contrib.auth.urls'))
 ]
