@@ -64,13 +64,19 @@ class LibraryRequest(RequestLog):
 
 class Function(models.Model):
     """ for python's methods """
+    library = models.ForeignKey(Library, on_delete=models.CASCADE)
     name = models.CharField(unique=True, max_length=20)
     description = models.TextField(max_length=400)
-    instance = models.TextField(max_length=400)
-    library = models.ForeignKey(Library, on_delete=models.CASCADE)
+    example = models.TextField(max_length=400)
+    instance = models.TextField()
     tag = models.ForeignKey(TagList, blank=True, null=True)
     creator = models.ForeignKey(UserProfile)
     timestamp = models.DateTimeField('update time', auto_now=True)
+    visible = models.BooleanField(default=True)
+
+    def hide(self):
+        self.visible = False
+        self.save()
 
 
 class FunctionRequest(RequestLog):
@@ -84,6 +90,11 @@ class Topic(models.Model):
     description = models.TextField(max_length=400)
     creator = models.ForeignKey(UserProfile)
     timestamp = models.DateTimeField('update time', auto_now=True)
+    visible = models.BooleanField(default=True)
+
+    def hide(self):
+        self.visible = False
+        self.save()
 
 
 class TopicRequest(RequestLog):
@@ -93,13 +104,18 @@ class TopicRequest(RequestLog):
 
 class Skill(models.Model):
     """ The coding skills for each less code topic """
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     title = models.CharField(unique=True, max_length=40)
     background = models.TextField(max_length=400)
     solution = models.TextField()
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     tag = models.ForeignKey(TagList, blank=True, null=True)
     creator = models.ForeignKey(UserProfile)
     timestamp = models.DateTimeField('update time', auto_now=True)
+    visible = models.BooleanField(default=True)
+
+    def hide(self):
+        self.visible = False
+        self.save()
 
 
 class SkillRequest(RequestLog):

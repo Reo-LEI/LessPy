@@ -39,9 +39,12 @@ class FunctionForm(forms.Form):
     description = forms.CharField(maxlength=400,
                                   help_text='400 characters max',
                                   widget=forms.Textarea)
-    instance = forms.CharField(lable='example',
-                               help_text='the example for this function')
-    tag = forms.ChoiceField()
+    example = forms.CharField(lable='Example',
+                              help_text='the sample example for this function')
+    instance = forms.CharField(lable='Instance',
+                               help_text='the whole code for this function in '
+                                         'real case')
+    tag = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(FunctionForm, self).__init__(*args, **kwargs)
@@ -52,6 +55,7 @@ class FunctionForm(forms.Form):
 class FunctionRequestForm(forms.Form):
     library = forms.ChoiceField()
     function = forms.ChoiceField()
+    request_type = forms.ChoiceField(choices=RequestLog.REQUEST_TYPE_LIST)
     subject = forms.CharField(max_length=20)
     solution = forms.CharField(widget=forms.Textarea)
     note = forms.CharField()
@@ -92,7 +96,7 @@ class SkillForm(forms.Form):
                                  help_text='What problem you want to solve by '
                                            'this skill')
     solution = forms.CharField(widget=forms.Textarea)
-    tag = forms.ChoiceField()
+    tag = forms.ChoiceField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(SkillForm, self).__init__(*args, **kwargs)
