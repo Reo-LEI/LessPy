@@ -34,6 +34,7 @@ class RequestLog(models.Model):
     subject = models.TextField(max_length=40)
     solution = models.TextField()
     note = models.TextField()
+    confirm = models.BooleanField(default=False)
     creator = models.ForeignKey(
         UserProfile, blank=True, null=True, on_delete=models.SET_NULL)
     approver = models.ForeignKey(
