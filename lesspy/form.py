@@ -3,11 +3,19 @@ from django import forms
 from .models import RequestLog, TagList, Library, Function, Topic, Skill
 
 
-class UserProfileForm(forms.Form):
-    pass
+class UserForm(forms.Form):
+    username = forms.CharField(30)
+    email = forms.EmailField()
+    password = forms.CharField(widget=forms.PasswordInput)
+    password_confirm = forms.CharField(lable='Confirm',
+                                       widget=forms.PasswordInput)
+    chinesename = forms.CharField(max_length=10, required=False)
+
+    def pwd_validate(self, pwd1, pwd2):
+        return pwd1 == pwd2
 
 
-class TagListForm(forms):
+class TagListForm(forms.Form):
     classes = forms.ChoiceField(choices=TagList.CLASSES_LIST)
     tag = forms.CharField(max_length=20)
 

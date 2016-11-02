@@ -6,6 +6,8 @@ from . import views
 app_name = 'lesspy'
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^register/$', views.register, name='register'),
+    url(r'^tag_list/$', views.tag_list, name='tag_list'),
 
     # /pythonlib/
     url(r'^pythonlib/$', include([

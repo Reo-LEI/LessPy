@@ -5,6 +5,15 @@ from django.contrib.auth.models import User
 class UserProfile(models.Model):
     """  store non-auth related information about user."""
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    chinesename = models.CharField(max_length=10)
+    task = models.IntegerField(default=0)
+
+    def add_task(self):
+        self.task += 1
+        self.save()
+
+    def has_task(self):
+        return self.task > 0
 
 
 class Text(models.Model):

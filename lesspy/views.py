@@ -1,13 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.http import require_GET, require_POST,\
-    require_safe, require_http_methods
+from django.views.decorators.http import require_safe, require_http_methods
 from django.core.paginator import Paginator
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, permission_required
 
-from .models import UserProfile, Text, TagList, Library, LibraryRequest, \
-    Function, FunctionRequest, Topic, TopicRequest, Skill, SkillRequest
-from .form import UserProfileForm,  TagListForm, LibraryForm,\
+from .models import User, Text, TagList, Library, LibraryRequest, Function, \
+    FunctionRequest, Topic, TopicRequest, Skill, SkillRequest
+from .form import UserForm, TagListForm, LibraryForm,\
     LibraryRequestForm, FunctionForm, FunctionRequestForm, TopicForm, \
     TopicRequestForm, SkillForm, SkillRequestForm
 from .. import envconfig as env
@@ -22,6 +22,58 @@ def index(request):
         'topics': topics, 'usage': usage})
 
 
+@require_http_methods(['GET', 'POST'])
+def register(request):
+    form = UserForm()
+    if request.method == 'POST':
+        form = UserForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            pwd = form.cleaned_data['password']
+            pwd_confirm = form.cleaned_data['password_confirm']
+            chinesename = form.cleaned_data['chinessname']
+            if not User.objects.filter(username=username).exists():
+                if form.pwd_validate(pwd, pwd_confirm):
+                    user = User.objects.create_user(
+                        username=username, email=email, password=pwd)
+                    user.save()
+                    # user = UserProfile.objects.get(user=user)
+                    user.chinesename = chinesename
+                    user.save()
+                    user = authenticate(username=username, password=pwd)
+                    login(request, user)
+                    messages.success(request, 'Welcome to LessPY!')
+                    return redirect('lesspy:index')
+                else:
+                    messages.error(request, 'Please input the same password')
+            else:
+                messages.error(request, 'This user has been exists')
+    return render(request, 'registration/register.html', {'form': form})
+
+
+@require_http_methods(['GET', 'POST'])
+@login_required
+@permission_required('lesspy.add_taglist')
+def tag_list(request):
+    form = TagListForm()
+    if request.method == 'POST':
+        form = TagListForm(request.POST)
+        if form.is_valid():
+            classes = form.cleaned_data['classes']
+            tag = form.cleaned_data['tag']
+            if TagList.objects.filter(tag=tag).exists():
+                messages.error(request, 'This tag has been exists')
+            else:
+                TagList.objects.create(
+                    classes=classes,
+                    tag=tag
+                )
+                messages.success(request, 'Create tag succeed')
+                return redirect('lesspy:tag_list')
+    return render(request, 'lesspy/tag_list.html', {'form': form})
+
+
 @require_safe
 def lib_list(request):
     library = Library.objects.filter(visible=True).order_by('name')
@@ -31,9 +83,9 @@ def lib_list(request):
     return render(request, 'lesspy/lib_list.html', {'items': items})
 
 
-# TODO permission require(add)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.add_library')
 def lib_add(request):
     form = LibraryForm()
     if request.method == 'POST':
@@ -54,9 +106,9 @@ def lib_add(request):
     return render(request, 'lesspy/lib_add.html', context={'form': form})
 
 
-# TODO permission require(del)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.delete_library')
 def lib_del(request, lib_name):
     messages.warning(request, 'You want to delete {0}'.format(lib_name))
     if request.method == 'POST':
@@ -68,9 +120,9 @@ def lib_del(request, lib_name):
     return redirect('lesspy:func_list')
 
 
-# TODO permission require(edit)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.change_library')
 def lib_edit(request, lib_name):
     lib = get_object_or_404(Library, visible=True, name=lib_name)
     form = LibraryForm(initial={
@@ -118,7 +170,9 @@ def lib_request(request, lib_name):
                 note=note,
                 creator=creator
             )
-            # TODO send msg to manager, and pass request confirm(backlog +1)
+            approvers = User.objects.filter(groups__name='lib_editor')
+            for editor in approvers:
+                editor.userprofile.add_task()
             messages.success(request, 'Your message has been submit, the result'
                                       'will message to you after pass.')
             return redirect('lesspy:func_list', lib_name=library.name)
@@ -131,9 +185,9 @@ def func_list(request, lib_name):
     return render(request, 'lesspy/func_list.html', {'functions': functions})
 
 
-# TODO permission require(add)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.add_function')
 def func_add(request, lib_name):
     form = FunctionForm()
     if request.method == 'POST':
@@ -170,9 +224,9 @@ def func(request, lib_name, func_name):
     return render(request, 'lesspy/func.html', {'func': f})
 
 
-# TODO permission require(del)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.del_function')
 def func_del(request, lib_name, func_name):
     messages.warning(request, 'You want to delete {0}'.format(func_name))
     if request.method == 'POST':
@@ -184,9 +238,9 @@ def func_del(request, lib_name, func_name):
     return redirect('lesspy:func', lib_name=lib_name, func_name=func_name)
 
 
-# TODO permission require(edit)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.change_function')
 def func_edit(request, lib_name, func_name):
     f = get_object_or_404(Function, name=func_name)
     form = FunctionForm(initial={
@@ -253,7 +307,9 @@ def func_request(request, lib_name, func_name):
                     note=note,
                     creator=creator
                 )
-                # TODO send msg to manager, and pass request confirm(backlog +1)
+                approvers = User.objects.filter(groups__name='lib_editor')
+                for editor in approvers:
+                    editor.userprofile.add_task()
                 messages.success(request,
                                  'Your message has been submit, the result'
                                  'will message to you after pass.')
@@ -268,9 +324,9 @@ def topic_list(request):
     return render(request, 'lesspy/topic_list.html', {'topics': topics})
 
 
-# TODO permission require(add)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.add_topic')
 def topic_add(request):
     form = TopicForm()
     if request.method == 'POST':
@@ -292,22 +348,23 @@ def topic_add(request):
     return render(request, 'lesspy/topic_add.html', {'form': form})
 
 
-# TODO permission require(del)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.delete_topic')
 def topic_del(request, topic_name):
     messages.warning(request, 'You want to delete {0}'.format(topic_name))
     if request.method == 'POST':
         topic = get_object_or_404(Topic, title=topic_name)
         topic.hide()
         messages.success(request, 'Delete succeed')
+        # TODO send msg to supervisor to note
         return redirect('lesspy:topic_list')
     return redirect('lesspy:topic_del.html', topic_name=topic_name)
 
 
-# TODO permission require(edit)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.change_topic')
 def topic_edit(request, topic_name):
     topic = get_object_or_404(Topic, title=topic_name)
     form = TopicForm(initial={
@@ -355,7 +412,9 @@ def topic_request(request, topic_name):
                 note=note,
                 creator=creator
             )
-            # TODO send msg to manager, and pass request confirm(backlog +1)
+            approvers = User.objects.filter(groups__name='topic_editor')
+            for editor in approvers:
+                editor.userprofile.add_task()
             messages.success(request, 'Your message has been submit, the result'
                                       'will message to you after pass.')
             return redirect('lesspy:skill_list', topic_name=topic.title)
@@ -368,7 +427,9 @@ def skill_list(request, topic_name):
     return render(request, 'lesspy/skill_list.html', {'topic': topic})
 
 
-# TODO permission require(add)
+@require_http_methods(['GET', 'POST'])
+@login_required
+@permission_required('lesspy.add_skill')
 def skill_add(request, topic_name):
     form = SkillForm()
     if request.method == 'POST':
@@ -402,22 +463,23 @@ def skill(request, topic_name, skill_name):
     return render(request, 'lesspy/skill.html', {'skill': s})
 
 
-# TODO permission require(del)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.delete_skill')
 def skill_del(request, topic_name, skill_name):
     messages.warning(request, 'You want to delete {0}'.format(skill_name))
     if request.method == 'POST':
         s = get_object_or_404(Skill, title=skill_name)
         s.hide()
         messages.success(request, 'Delete succeed')
+        # TODO send msg to supervisor to note
         return redirect('lesspy:skill_list', topic_name=topic_name)
     return redirect('lesspy:skill', topic_name=topic_name, skill_name=skill_name)
 
 
-# TODO permission require(edit)
 @require_http_methods(['GET', 'POST'])
 @login_required
+@permission_required('lesspy.change_skill')
 def skill_edit(request, topic_name, skill_name):
     s = get_object_or_404(Skill, title=skill_name)
     form = SkillForm(initial={
@@ -463,7 +525,7 @@ def skill_request(request, topic_name, skill_name):
             topic = get_object_or_404(Topic, id=topic_id)
             s_id = form.cleaned_data['skill']
             s = get_object_or_404(Skill, id=s_id)
-            request_tpye = form.cleaned_data['request_type']
+            request_type = form.cleaned_data['request_type']
             subject = form.cleaned_data['subject']
             solution = form.cleaned_data['solution']
             note = form.cleaned_data['note']
@@ -475,13 +537,15 @@ def skill_request(request, topic_name, skill_name):
                 SkillRequest.objects.create(
                     topic=topic,
                     skill=s,
-                    request_tpye=request_tpye,
+                    request_tpye=request_type,
                     subject=subject,
                     solution=solution,
                     note=note,
                     creator=creator
                 )
-                # TODO send msg to manager, and pass request confirm(backlog +1)
+                approvers = User.objects.filter(groups__name='topic_editor')
+                for editor in approvers:
+                    editor.userprofile.add_task()
                 messages.success(request,
                                  'Your message has been submit, the result'
                                  'will message to you after pass.')
